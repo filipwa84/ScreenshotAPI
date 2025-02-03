@@ -3,7 +3,8 @@ FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 WORKDIR /app
 
 # Install dependencies for Chromium, ChromeDriver, and fonts (Debian-based)
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
     chromium \
     chromium-driver \
     fonts-noto \
@@ -23,7 +24,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     alsa-utils \
     curl \
     ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Ensure ChromeDriver is accessible in PATH
 ENV PATH="/usr/bin/:$PATH"
