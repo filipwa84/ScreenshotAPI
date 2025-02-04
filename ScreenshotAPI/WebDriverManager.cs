@@ -6,13 +6,6 @@ using System.Threading;
 
 namespace ScreenshotAPI
 {
-    using OpenQA.Selenium;
-    using OpenQA.Selenium.Chrome;
-    using System;
-    using System.Collections.Concurrent;
-    using System.Threading;
-    using System.Threading.Tasks;
-
     public class WebDriverManager : IDisposable
     {
         private readonly ConcurrentDictionary<int, (IWebDriver Driver, ChromeDriverService Service)> _webDrivers = new();
