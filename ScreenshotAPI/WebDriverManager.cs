@@ -43,12 +43,7 @@ namespace ScreenshotAPI
                     options.AddArgument($"--lang={language}");
                     options.AddArgument($"--force-lang={language}");
                     options.AddArgument($"--accept-lang={language}");
-
-                    var chromePrefs = new Dictionary<string, object>
-                {
-                    { "intl.accept_languages", $"{language},{language[..2]}" }
-                };
-                    options.AddAdditionalOption("prefs", chromePrefs);
+                    options.AddUserProfilePreference("intl.accept_languages", language);
                 }
 
                 var driverService = ChromeDriverService.CreateDefaultService();
