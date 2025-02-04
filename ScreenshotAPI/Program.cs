@@ -1,6 +1,7 @@
 ﻿using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using System;
+using System.Globalization;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -32,7 +33,7 @@ app.MapGet("/screenshot", async (HttpContext context) =>
             url = "http://" + url;
         }
 
-        Console.WriteLine($"{DateTime.UtcNow} Capturing screenshot for URL: {url}");
+        Console.WriteLine($"{DateTime.UtcNow.ToString("yyyy-MM-dd hh:mm:ss", CultureInfo.InvariantCulture)} Capturing screenshot for URL: {url}");
 
         var options = new ChromeOptions();
         options.AddArgument("--headless");
@@ -62,7 +63,7 @@ app.MapGet("/screenshot", async (HttpContext context) =>
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"{DateTime.UtcNow} Error: {ex.Message}");
+        Console.WriteLine($"{DateTime.UtcNow.ToString("yyyy-MM-dd hh:mm:ss", CultureInfo.InvariantCulture)} Error: {url}\n{ex.Message}");
         Console.WriteLine($"{ex.ToString()}");
         Console.WriteLine($"********************************************");
         return Results.Problem(detail: ex.ToString(), statusCode: 500);
