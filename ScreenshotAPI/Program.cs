@@ -12,6 +12,7 @@ var app = builder.Build();
 app.MapGet("/screenshot", async (HttpContext context) =>
 {
     string url = context.Request.Query["url"];
+    
     if (string.IsNullOrEmpty(url))
     {
         return Results.BadRequest("Missing 'url' parameter.");
@@ -36,16 +37,22 @@ app.MapGet("/screenshot", async (HttpContext context) =>
         options.AddArgument("--ignore-certificate-errors");
         options.AddArgument("--window-size=1920,1080");
 
-        var driverService = ChromeDriverService.CreateDefaultService("/usr/bin/", "chromedriver");
-        using var driver = new ChromeDriver(options);
-        driver.Navigate().GoToUrl(url);
+        var driverService = ChromeDriverService.CreateDefaultService();
+        driverService.SuppressInitialDiagnosticInformation = true;
+        driverService.HideCommandPromptWindow = true;
+        driverService.EnableVerboseLogging = false;
 
-        // Take screenshot into memory
-        Screenshot screenshot = ((ITakesScreenshot)driver).GetScreenshot();
-        byte[] imageBytes = screenshot.AsByteArray;
+        using (var driver = new ChromeDriver(driverService, options))
+        {
+            driver.Navigate().GoToUrl(url);
 
-        // Return the image directly from memory
-        return Results.File(new MemoryStream(imageBytes), "image/png");
+            // Take screenshot into memory
+            Screenshot screenshot = ((ITakesScreenshot)driver).GetScreenshot();
+            byte[] imageBytes = screenshot.AsByteArray;
+
+            // Return the image directly from memory
+            return Results.File(new MemoryStream(imageBytes), "image/png");
+        }
     }
     catch (Exception ex)
     {
