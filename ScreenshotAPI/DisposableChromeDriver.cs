@@ -110,7 +110,7 @@ namespace ScreenshotAPI
                 ");
 
                 Console.WriteLine($"[Attempt {attempt}/{maxRetries}] Loaded: {allImagesLoaded}, Rendered: {imagesRendered}");
-                               
+                await Task.Delay(200);
                 if (allImagesLoaded && imagesRendered)
                     return true;
 
