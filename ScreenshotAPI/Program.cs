@@ -4,9 +4,15 @@ using System;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
+using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Logging.ClearProviders();
+builder.Logging.AddFilter("Microsoft", LogLevel.None);
+builder.Logging.AddFilter("System", LogLevel.None);
+builder.Logging.AddFilter("Default", LogLevel.None);
 builder.WebHost.UseUrls("http://0.0.0.0:5000");
+
 var app = builder.Build();
 
 app.MapGet("/screenshot", async (HttpContext context) =>
