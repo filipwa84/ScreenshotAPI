@@ -30,6 +30,9 @@ namespace ScreenshotAPI
                 options.AddArgument("--disable-setuid-sandbox");
                 options.AddArgument("--ignore-certificate-errors");
                 options.AddArgument("--window-size=1920,1080");
+                options.AddArgument("--log-level=3");
+                options.AddArgument("--disable-logging");
+                options.AddArgument("--v=0");
 
                 var driver = new ChromeDriver(options);
                 driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(60);
