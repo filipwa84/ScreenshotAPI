@@ -37,10 +37,19 @@ namespace ScreenshotAPI
                 options.AddArgument("--disable-setuid-sandbox");
                 options.AddArgument("--ignore-certificate-errors");
                 options.AddArgument("--window-size=1920,1080");
-                
-                options.AddArgument($"--lang={language}");
-                options.AddArgument($"--force-lang={language}");
-                options.AddArgument($"--accept-lang={language}");
+
+                if (!string.IsNullOrEmpty(language) && language.Length >= 2)
+                {
+                    options.AddArgument($"--lang={language}");
+                    options.AddArgument($"--force-lang={language}");
+                    options.AddArgument($"--accept-lang={language}");
+
+                    var chromePrefs = new Dictionary<string, object>
+                {
+                    { "intl.accept_languages", $"{language},{language[..2]}" }
+                };
+                    options.AddAdditionalOption("prefs", chromePrefs);
+                }
 
                 var driverService = ChromeDriverService.CreateDefaultService();
                 driverService.SuppressInitialDiagnosticInformation = true;
