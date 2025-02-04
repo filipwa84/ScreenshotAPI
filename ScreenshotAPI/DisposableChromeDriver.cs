@@ -76,32 +76,48 @@ namespace ScreenshotAPI
 
             for (int attempt = 1; attempt <= maxRetries; attempt++)
             {                
-                js.ExecuteScript("window.scrollTo(0, document.body.scrollHeight);");                             
+                js.ExecuteScript("window.scrollTo(0, document.body.scrollHeight);");
                                 
-                var loadedImagesCount = (long)js.ExecuteScript(@"
+                bool allImagesLoaded = (bool)js.ExecuteScript(@"
                     let images = document.querySelectorAll('img');
-                    return [...images].filter(img => 
-                        img.complete && 
-                        img.naturalWidth > 1 && 
-                        img.naturalHeight > 1 &&
+                    return images.length > 0 && [...images].every(img => 
+                        img.complete && img.naturalWidth > 1 && img.naturalHeight > 1 &&
                         getComputedStyle(img).display !== 'none' &&
                         getComputedStyle(img).visibility !== 'hidden' &&
                         img.width > 10 && img.height > 10 
-                    ).length;
+                    );
+                ");
+                                
+                js.ExecuteScript(@"
+                    document.body.style.transform = 'scale(1)'; 
+                    document.body.offsetHeight; // Trigger reflow
+                ");
+                               
+                bool imagesRendered = (bool)js.ExecuteScript(@"
+                    let canvas = document.createElement('canvas');
+                    let ctx = canvas.getContext('2d');
+                    let images = document.querySelectorAll('img');
+            
+                    return [...images].some(img => {
+                        try {
+                            ctx.drawImage(img, 0, 0);
+                            let pixelData = ctx.getImageData(0, 0, 1, 1).data;
+                            return pixelData[3] > 0; // Check if pixel has content
+                        } catch (e) {
+                            return false;
+                        }
+                    });
                 ");
 
-                var totalImages = (long)js.ExecuteScript("return document.querySelectorAll('img').length;");
-
-                Console.WriteLine($"[Attempt {attempt}/{maxRetries}] Loaded: {loadedImagesCount}/{totalImages} images.");
-                                
-                if (totalImages > 0 && loadedImagesCount == totalImages)
+                Console.WriteLine($"[Attempt {attempt}/{maxRetries}] Loaded: {allImagesLoaded}, Rendered: {imagesRendered}");
+                               
+                if (allImagesLoaded && imagesRendered)
                     return true;
 
                 await Task.Delay(delayMs);
             }
 
-            Console.WriteLine("Warning: Not all images loaded after max retries.");
-            
+            Console.WriteLine("Warning: Images may not be fully rendered after max retries.");
             return false;
         }
 
