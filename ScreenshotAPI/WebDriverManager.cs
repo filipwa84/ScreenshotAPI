@@ -43,9 +43,7 @@ namespace ScreenshotAPI
                     options.AddArgument($"--lang={language}");
                     options.AddArgument($"--force-lang={language}");
                     options.AddArgument($"--accept-lang={language}");
-                    options.AddUserProfilePreference($"intl.accept_languages", $"{language},{language[..2]};q=0.9");
-                    //options.AddUserProfilePreference("profile.default_content_setting_values.cookies", 2);
-                    //options.AddUserProfilePreference("profile.block_third_party_cookies", true);
+                    options.AddUserProfilePreference($"intl.accept_languages", $"{language},{language[..2]};q=0.9");                    
                 }
 
                 var driverService = ChromeDriverService.CreateDefaultService();
