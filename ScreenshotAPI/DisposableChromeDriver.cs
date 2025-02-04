@@ -77,9 +77,7 @@ namespace ScreenshotAPI
             for (int attempt = 1; attempt <= maxRetries; attempt++)
             {                
                 js.ExecuteScript("window.scrollTo(0, document.body.scrollHeight);");
-                                
-                await Task.Delay(delayMs);
-                
+                                                
                 bool allImagesLoaded = (bool)js.ExecuteScript(@"var images = document.images;
                                                                 return images.length > 0 && Array.from(images).every(img => img.complete && img.naturalHeight > 0);");
 
@@ -87,6 +85,8 @@ namespace ScreenshotAPI
 
                 if (allImagesLoaded)
                     return true; 
+
+                await Task.Delay(delayMs);
             }
 
             Console.WriteLine("Warning: Images may not be fully loaded after max retries.");
