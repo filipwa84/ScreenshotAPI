@@ -20,17 +20,18 @@ var app = builder.Build();
 app.MapGet("/screenshot", async ([FromServices] DisposableChromeDriver disposableDriver, HttpContext context) =>
 {
     string url = context.Request.Query["url"]!;
-    string lang = context.Request.Query["lang"]!;
-    string optimizeString = context.Request.Query["optimize"]!;
+    string lang = context.Request.Query["lang"]!;    
+    var optimize = string.Equals(context.Request.Query["optimize"]!, "true", StringComparison.OrdinalIgnoreCase);
 
-    
     if (string.IsNullOrEmpty(url))
     {
         return Results.BadRequest("Missing 'url' parameter.");
     }
 
-    lang ??= "en-UK";
-    bool optimize = string.Equals(optimizeString, "true", StringComparison.OrdinalIgnoreCase);
+    if (string.IsNullOrEmpty(lang))
+    {
+        lang = "en-UK";
+    }
 
     try
     {        
