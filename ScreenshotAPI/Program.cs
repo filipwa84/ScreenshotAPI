@@ -2,9 +2,6 @@
 using OpenQA.Selenium.Chrome;
 using System;
 using System.Globalization;
-using System.IO;
-using System.Net.Http;
-using System.Threading.Tasks;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -26,8 +23,7 @@ app.MapGet("/screenshot", async (HttpContext context) =>
     }
 
     try
-    {
-        // Ensure URL includes a scheme
+    {        
         if (!url.StartsWith("http://") && !url.StartsWith("https://"))
         {
             url = "http://" + url;
@@ -52,13 +48,10 @@ app.MapGet("/screenshot", async (HttpContext context) =>
         using (var driver = new ChromeDriver(driverService, options))
         {
             driver.Navigate().GoToUrl(url);
-
-            // Take screenshot into memory
-            Screenshot screenshot = ((ITakesScreenshot)driver).GetScreenshot();
-            byte[] imageBytes = screenshot.AsByteArray;
-
-            // Return the image directly from memory
-            return Results.File(new MemoryStream(imageBytes), "image/png");
+                        
+            var screenshot = ((ITakesScreenshot)driver).GetScreenshot();
+                       
+            return Results.File(new MemoryStream(screenshot.AsByteArray), "image/png");
         }
     }
     catch (Exception ex)
@@ -66,9 +59,8 @@ app.MapGet("/screenshot", async (HttpContext context) =>
         Console.WriteLine($"{DateTime.UtcNow.ToString("yyyy-MM-dd hh:mm:ss", CultureInfo.InvariantCulture)} Error: {url}\n{ex.Message}");
         Console.WriteLine($"{ex.ToString()}");
         Console.WriteLine($"********************************************");
-        return Results.Problem(detail: ex.ToString(), statusCode: 500);
+        return Results.Problem(detail: ex.Message, statusCode: 500);
     }
-
 });
 
 app.Run();
