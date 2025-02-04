@@ -20,6 +20,8 @@ app.MapGet("/screenshot", async (WebDriverManager webDriverManager, HttpContext 
 {
     string url = context.Request.Query["url"]!;
     string lang = context.Request.Query["lang"]!;
+    string optimizeString = context.Request.Query["optimize"]!;
+
     
     if (string.IsNullOrEmpty(url))
     {
@@ -31,6 +33,12 @@ app.MapGet("/screenshot", async (WebDriverManager webDriverManager, HttpContext 
         lang = "en-US";
     }
 
+    var optimize = false;
+    if(!string.IsNullOrEmpty(optimizeString))
+    {
+        optimize = optimizeString == "true";
+    }
+
     try
     {        
         if (!url.StartsWith("http://") && !url.StartsWith("https://"))
@@ -40,7 +48,7 @@ app.MapGet("/screenshot", async (WebDriverManager webDriverManager, HttpContext 
 
         Console.WriteLine($"{DateTime.UtcNow.ToString("yyyy-MM-dd hh:mm:ss", CultureInfo.InvariantCulture)} Capturing screenshot for URL: {url}");
 
-        var driver = webDriverManager.GetDriver(lang);
+        var driver = webDriverManager.GetDriver(lang, optimize);
         driver.Navigate().GoToUrl(url);
 
         var screenshot = ((ITakesScreenshot)driver).GetScreenshot();
