@@ -74,36 +74,33 @@ namespace ScreenshotAPI
 
             var js = (IJavaScriptExecutor)_driver;
 
-            // First, check if images are already fully loaded
-            bool allImagesLoaded = (bool)js.ExecuteScript(@"
-                var images = document.images;
-                return Array.from(images).every(img => img.complete && img.naturalHeight !== 0);
-            ");
+            for (int attempt = 1; attempt <= maxRetries; attempt++)
+            {                
+                js.ExecuteScript("window.scrollTo(0, document.body.scrollHeight);");
+                                
+                await Task.Delay(delayMs);
+                
+                bool allImagesLoaded = (bool)js.ExecuteScript(@"var images = document.images;
+                                                                return images.length > 0 && Array.from(images).every(img => img.complete && img.naturalHeight > 0);");
 
-            if (allImagesLoaded)
-                return true; // ✅ Return immediately if images are already loaded
+                Console.WriteLine($"[Attempt {attempt}/{maxRetries}] Images loaded: {allImagesLoaded}");
 
-            // Otherwise, wait and retry until images load
-            while (!allImagesLoaded && maxRetries > 0)
-            {
-                await Task.Delay(delayMs); // Wait before checking again
-                allImagesLoaded = (bool)js.ExecuteScript(@"
-                    var images = document.images;
-                    return Array.from(images).every(img => img.complete && img.naturalHeight !== 0);
-                ");
-                maxRetries--;
+                if (allImagesLoaded)
+                    return true; 
             }
 
-            return allImagesLoaded;
+            Console.WriteLine("Warning: Images may not be fully loaded after max retries.");
+            
+            return false;
         }
 
         public void Dispose()
         {
             if (_disposed) return;
 
-            _driver.Quit();
-            _driver.Dispose();
-            _driverService.Dispose();
+            _driver?.Quit();
+            _driver?.Dispose();
+            _driverService?.Dispose();
             
             _disposed = true;
             GC.SuppressFinalize(this);
