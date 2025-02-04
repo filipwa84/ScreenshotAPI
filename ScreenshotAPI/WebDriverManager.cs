@@ -38,9 +38,7 @@ namespace ScreenshotAPI
                     options.AddArgument("--disable-extensions");
                     options.AddArgument("--disable-background-networking");                    
                     options.AddArgument("--disable-features=SitePerProcess");
-                    options.AddArgument("--disable-background-timer-throttling");
-                    options.AddArgument("--disable-renderer-backgrounding");
-                    options.AddArgument("--blink-settings=imagesEnabled=false");
+                    options.AddArgument("--disable-background-timer-throttling");                    
                     options.AddArgument("--disk-cache-size=0");
                     options.AddArgument("--mute-audio");
                     options.AddArgument("--disable-sync");
