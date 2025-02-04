@@ -18,7 +18,7 @@ namespace ScreenshotAPI
         private readonly ConcurrentDictionary<int, (IWebDriver Driver, ChromeDriverService Service)> _webDrivers = new();
         private bool _disposed = false;
 
-        public IWebDriver GetDriver()
+        public IWebDriver GetDriver(string language = "en-US")
         {
             if (_disposed)
             {
@@ -37,7 +37,11 @@ namespace ScreenshotAPI
                 options.AddArgument("--disable-setuid-sandbox");
                 options.AddArgument("--ignore-certificate-errors");
                 options.AddArgument("--window-size=1920,1080");
-                                
+                
+                options.AddArgument($"--lang={language}");
+                options.AddArgument($"--force-lang={language}");
+                options.AddArgument($"--accept-lang={language}");
+
                 var driverService = ChromeDriverService.CreateDefaultService();
                 driverService.SuppressInitialDiagnosticInformation = true;
                 driverService.EnableVerboseLogging = false;

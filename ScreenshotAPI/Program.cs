@@ -19,10 +19,16 @@ var app = builder.Build();
 app.MapGet("/screenshot", async (WebDriverManager webDriverManager, HttpContext context) =>
 {
     string url = context.Request.Query["url"]!;
+    string lang = context.Request.Query["lang"]!;
     
     if (string.IsNullOrEmpty(url))
     {
         return Results.BadRequest("Missing 'url' parameter.");
+    }
+
+    if (string.IsNullOrEmpty(lang))
+    {
+        lang = "en-US";
     }
 
     try
@@ -34,7 +40,7 @@ app.MapGet("/screenshot", async (WebDriverManager webDriverManager, HttpContext 
 
         Console.WriteLine($"{DateTime.UtcNow.ToString("yyyy-MM-dd hh:mm:ss", CultureInfo.InvariantCulture)} Capturing screenshot for URL: {url}");
 
-        var driver = webDriverManager.GetDriver();
+        var driver = webDriverManager.GetDriver(lang);
         driver.Navigate().GoToUrl(url);
 
         var screenshot = ((ITakesScreenshot)driver).GetScreenshot();
