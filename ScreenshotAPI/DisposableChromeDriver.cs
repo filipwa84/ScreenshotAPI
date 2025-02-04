@@ -76,20 +76,31 @@ namespace ScreenshotAPI
 
             for (int attempt = 1; attempt <= maxRetries; attempt++)
             {                
-                js.ExecuteScript("window.scrollTo(0, document.body.scrollHeight);");
-                                                
-                bool allImagesLoaded = (bool)js.ExecuteScript(@"var images = document.images;
-                                                                return images.length > 0 && Array.from(images).every(img => img.complete && img.naturalHeight > 0);");
+                js.ExecuteScript("window.scrollTo(0, document.body.scrollHeight);");                             
+                                
+                var loadedImagesCount = (long)js.ExecuteScript(@"
+                    let images = document.querySelectorAll('img');
+                    return [...images].filter(img => 
+                        img.complete && 
+                        img.naturalWidth > 1 && 
+                        img.naturalHeight > 1 &&
+                        getComputedStyle(img).display !== 'none' &&
+                        getComputedStyle(img).visibility !== 'hidden' &&
+                        img.width > 10 && img.height > 10 
+                    ).length;
+                ");
 
-                Console.WriteLine($"[Attempt {attempt}/{maxRetries}] Images loaded: {allImagesLoaded}");
+                var totalImages = (long)js.ExecuteScript("return document.querySelectorAll('img').length;");
 
-                if (allImagesLoaded)
-                    return true; 
+                Console.WriteLine($"[Attempt {attempt}/{maxRetries}] Loaded: {loadedImagesCount}/{totalImages} images.");
+                                
+                if (totalImages > 0 && loadedImagesCount == totalImages)
+                    return true;
 
                 await Task.Delay(delayMs);
             }
 
-            Console.WriteLine("Warning: Images may not be fully loaded after max retries.");
+            Console.WriteLine("Warning: Not all images loaded after max retries.");
             
             return false;
         }
