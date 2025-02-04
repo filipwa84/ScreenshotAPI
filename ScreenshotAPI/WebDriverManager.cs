@@ -6,9 +6,16 @@ using System.Threading;
 
 namespace ScreenshotAPI
 {
+    using OpenQA.Selenium;
+    using OpenQA.Selenium.Chrome;
+    using System;
+    using System.Collections.Concurrent;
+    using System.Threading;
+    using System.Threading.Tasks;
+
     public class WebDriverManager : IDisposable
     {
-        private readonly ConcurrentDictionary<int, IWebDriver> _webDrivers = new();
+        private readonly ConcurrentDictionary<int, (IWebDriver Driver, ChromeDriverService Service)> _webDrivers = new();
         private bool _disposed = false;
 
         public IWebDriver GetDriver()
@@ -19,7 +26,7 @@ namespace ScreenshotAPI
             }
 
             var threadId = Thread.CurrentThread.ManagedThreadId;
-
+            
             return _webDrivers.GetOrAdd(threadId, _ =>
             {
                 var options = new ChromeOptions();
@@ -30,26 +37,31 @@ namespace ScreenshotAPI
                 options.AddArgument("--disable-setuid-sandbox");
                 options.AddArgument("--ignore-certificate-errors");
                 options.AddArgument("--window-size=1920,1080");
-                options.AddArgument("--log-level=3");
-                options.AddArgument("--disable-logging");
-                options.AddArgument("--v=0");
+                                
+                var driverService = ChromeDriverService.CreateDefaultService();
+                driverService.SuppressInitialDiagnosticInformation = true;
+                driverService.EnableVerboseLogging = false;
+                driverService.HideCommandPromptWindow = true;
+                driverService.LogPath = "/dev/null";
+                driverService.EnableAppendLog = false;
 
-                var driver = new ChromeDriver(options);
-                driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(60);
-                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(60);
+                var driver = new ChromeDriver(driverService, options);
+                driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(15);
+                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(15);
 
-                return driver;
-            });
+                return (driver, driverService);
+            }).Driver;
         }
 
         public void DisposeDriver()
         {
             int threadId = Thread.CurrentThread.ManagedThreadId;
 
-            if (_webDrivers.TryRemove(threadId, out IWebDriver? driver))
-            {
-                driver.Quit();
-                driver.Dispose();
+            if (_webDrivers.TryRemove(threadId, out var driverTuple))
+            {                
+                driverTuple.Driver.Quit();
+                driverTuple.Driver.Dispose();
+                driverTuple.Service.Dispose();
             }
         }
 
@@ -57,10 +69,11 @@ namespace ScreenshotAPI
         {
             if (_disposed) return;
 
-            foreach (var driver in _webDrivers.Values)
+            foreach (var (_, (driver, service)) in _webDrivers)
             {
                 driver.Quit();
                 driver.Dispose();
+                service.Dispose();
             }
 
             _webDrivers.Clear();
@@ -73,5 +86,6 @@ namespace ScreenshotAPI
             Dispose();
         }
     }
+
 }
 

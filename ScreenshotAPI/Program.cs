@@ -18,7 +18,7 @@ var app = builder.Build();
 
 app.MapGet("/screenshot", async (WebDriverManager webDriverManager, HttpContext context) =>
 {
-    string url = context.Request.Query["url"];
+    string url = context.Request.Query["url"]!;
     
     if (string.IsNullOrEmpty(url))
     {
