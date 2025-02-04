@@ -1,4 +1,5 @@
-﻿using OpenQA.Selenium;
+﻿using Microsoft.AspNetCore.Mvc;
+using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using ScreenshotAPI;
 using System;
@@ -6,7 +7,7 @@ using System.Globalization;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddSingleton<WebDriverManager>();
+builder.Services.AddScoped<DisposableChromeDriver>();
 
 builder.Logging.ClearProviders();
 builder.Logging.AddFilter("Microsoft", LogLevel.None);
@@ -16,7 +17,7 @@ builder.WebHost.UseUrls("http://0.0.0.0:5000");
 
 var app = builder.Build();
 
-app.MapGet("/screenshot", async (WebDriverManager webDriverManager, HttpContext context) =>
+app.MapGet("/screenshot", async ([FromServices] DisposableChromeDriver disposableDriver, HttpContext context) =>
 {
     string url = context.Request.Query["url"]!;
     string lang = context.Request.Query["lang"]!;
@@ -28,16 +29,8 @@ app.MapGet("/screenshot", async (WebDriverManager webDriverManager, HttpContext 
         return Results.BadRequest("Missing 'url' parameter.");
     }
 
-    if (string.IsNullOrEmpty(lang))
-    {
-        lang = "en-US";
-    }
-
-    var optimize = false;
-    if(!string.IsNullOrEmpty(optimizeString))
-    {
-        optimize = optimizeString == "true";
-    }
+    lang ??= "en-UK";
+    bool optimize = string.Equals(optimizeString, "true", StringComparison.OrdinalIgnoreCase);
 
     try
     {        
@@ -46,9 +39,9 @@ app.MapGet("/screenshot", async (WebDriverManager webDriverManager, HttpContext 
             url = "http://" + url;
         }
 
-        Console.WriteLine($"{DateTime.UtcNow.ToString("yyyy-MM-dd hh:mm:ss", CultureInfo.InvariantCulture)} Capturing screenshot for URL: {url}");
+        Console.WriteLine($"{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)} Capturing screenshot for URL: {url}");
 
-        var driver = webDriverManager.GetDriver(lang, optimize);
+        var driver = disposableDriver.GetDriver(lang, optimize);
         driver.Navigate().GoToUrl(url);
 
         var screenshot = ((ITakesScreenshot)driver).GetScreenshot();
@@ -58,21 +51,12 @@ app.MapGet("/screenshot", async (WebDriverManager webDriverManager, HttpContext 
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"{DateTime.UtcNow.ToString("yyyy-MM-dd hh:mm:ss", CultureInfo.InvariantCulture)} Error: {url}\n{ex.Message}");
+        Console.WriteLine($"{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)} Error: {url}\n{ex.Message}");
         Console.WriteLine($"{ex.ToString()}");
         Console.WriteLine($"********************************************");
+        
         return Results.Problem(detail: ex.Message, statusCode: 500);
-    }
-    finally
-    {        
-        webDriverManager.DisposeDriver();
-    }
-});
-
-app.Lifetime.ApplicationStopping.Register(() =>
-{
-    var webDriverManager = app.Services.GetRequiredService<WebDriverManager>();
-    webDriverManager.Dispose();
+    }    
 });
 
 app.Run();
