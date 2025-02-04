@@ -45,6 +45,8 @@ app.MapGet("/screenshot", async ([FromServices] DisposableChromeDriver disposabl
 
         var driver = disposableDriver.GetDriver(lang, optimize);
         driver.Navigate().GoToUrl(url);
+        
+        await disposableDriver.WaitForImagesToLoadAsync();
 
         var screenshot = ((ITakesScreenshot)driver).GetScreenshot();
                        

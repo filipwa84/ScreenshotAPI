@@ -67,6 +67,36 @@ namespace ScreenshotAPI
             return _driver;
         }
 
+        public async Task<bool> WaitForImagesToLoadAsync(int maxRetries = 5, int delayMs = 1000)
+        {
+            if (_disposed || _driver == null)
+                throw new ObjectDisposedException(nameof(DisposableChromeDriver));
+
+            var js = (IJavaScriptExecutor)_driver;
+
+            // First, check if images are already fully loaded
+            bool allImagesLoaded = (bool)js.ExecuteScript(@"
+                var images = document.images;
+                return Array.from(images).every(img => img.complete && img.naturalHeight !== 0);
+            ");
+
+            if (allImagesLoaded)
+                return true; // ✅ Return immediately if images are already loaded
+
+            // Otherwise, wait and retry until images load
+            while (!allImagesLoaded && maxRetries > 0)
+            {
+                await Task.Delay(delayMs); // Wait before checking again
+                allImagesLoaded = (bool)js.ExecuteScript(@"
+                    var images = document.images;
+                    return Array.from(images).every(img => img.complete && img.naturalHeight !== 0);
+                ");
+                maxRetries--;
+            }
+
+            return allImagesLoaded;
+        }
+
         public void Dispose()
         {
             if (_disposed) return;
