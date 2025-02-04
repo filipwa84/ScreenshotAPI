@@ -1,10 +1,13 @@
 ﻿using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+using ScreenshotAPI;
 using System;
 using System.Globalization;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddSingleton<WebDriverManager>();
+
 builder.Logging.ClearProviders();
 builder.Logging.AddFilter("Microsoft", LogLevel.None);
 builder.Logging.AddFilter("System", LogLevel.None);
@@ -13,7 +16,7 @@ builder.WebHost.UseUrls("http://0.0.0.0:5000");
 
 var app = builder.Build();
 
-app.MapGet("/screenshot", async (HttpContext context) =>
+app.MapGet("/screenshot", async (WebDriverManager webDriverManager, HttpContext context) =>
 {
     string url = context.Request.Query["url"];
     
@@ -31,28 +34,13 @@ app.MapGet("/screenshot", async (HttpContext context) =>
 
         Console.WriteLine($"{DateTime.UtcNow.ToString("yyyy-MM-dd hh:mm:ss", CultureInfo.InvariantCulture)} Capturing screenshot for URL: {url}");
 
-        var options = new ChromeOptions();
-        options.AddArgument("--headless");
-        options.AddArgument("--disable-gpu");
-        options.AddArgument("--no-sandbox");
-        options.AddArgument("--disable-dev-shm-usage");
-        options.AddArgument("--disable-setuid-sandbox");
-        options.AddArgument("--ignore-certificate-errors");
-        options.AddArgument("--window-size=1920,1080");
+        var driver = webDriverManager.GetDriver();
+        driver.Navigate().GoToUrl(url);
 
-        var driverService = ChromeDriverService.CreateDefaultService();
-        driverService.SuppressInitialDiagnosticInformation = true;
-        driverService.HideCommandPromptWindow = true;
-        driverService.EnableVerboseLogging = false;
-
-        using (var driver = new ChromeDriver(driverService, options))
-        {
-            driver.Navigate().GoToUrl(url);
-                        
-            var screenshot = ((ITakesScreenshot)driver).GetScreenshot();
+        var screenshot = ((ITakesScreenshot)driver).GetScreenshot();
                        
-            return Results.File(new MemoryStream(screenshot.AsByteArray), "image/png");
-        }
+        return Results.File(new MemoryStream(screenshot.AsByteArray), "image/png");
+       
     }
     catch (Exception ex)
     {
@@ -61,6 +49,16 @@ app.MapGet("/screenshot", async (HttpContext context) =>
         Console.WriteLine($"********************************************");
         return Results.Problem(detail: ex.Message, statusCode: 500);
     }
+    finally
+    {        
+        webDriverManager.DisposeDriver();
+    }
+});
+
+app.Lifetime.ApplicationStopping.Register(() =>
+{
+    var webDriverManager = app.Services.GetRequiredService<WebDriverManager>();
+    webDriverManager.Dispose();
 });
 
 app.Run();
